@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap # TODO: Make this a secret
+metadata:
+  name: plausible-config
+  namespace: plausible
+data:
+  POSTGRES_PASSWORD: "postgres"
+  SECRET_KEY_BASE: "tB7zaPpTIaIBUJDL7Wz0CbtlJ/wJ8pXf700Iqol7RzT3TLvN0Jjd4yprWCyQUxtCQOMce3+1fsfhsbRO49U0AA=="
+  DOMAIN_NAME: "analytics.jeadie.xyz"

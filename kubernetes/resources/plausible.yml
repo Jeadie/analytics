@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plausible
+  namespace: plausible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plausible
+  template:
+    metadata:
+      labels:
+        app: plausible
+    spec:
+      containers:
+        - name: plausible
+          image: plausible/analytics:latest
+          command: ["sh", "-c", "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"]
+          envFrom:
+            - configMapRef:
+                name: plausible-config
+          env:
+            - name: DATABASE_URL
+              value: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/plausible_db"
+            - name: CLICKHOUSE_DATABASE_URL
+              value: "http://events-db:8123/plausible_events_db"
+            - name: DOMAIN_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: plausible-config
+                  key: DOMAIN_NAME
+            - name: BASE_URL
+              value: "https://${DOMAIN_NAME}"
+            - name: ENABLE_EMAIL_VERIFICATION
+              value: "true"
+            - name: MAILER_EMAIL
+              value: "hello@${DOMAIN_NAME}"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: plausible-config
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_KEY_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: plausible-config
+                  key: SECRET_KEY_BASE
+          ports:
+            - containerPort: 8000
+
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.28
+          command: ["sh", "-c", "until nslookup db; do echo waiting for db; sleep 2; done"]
+        - name: wait-for-events-db
+          image: busybox:1.28
+          command: ["sh", "-c", "until nslookup events-db; do echo waiting for events-db; sleep 2; done"]
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: plausible
+  namespace: plausible
+spec:
+  selector:
+    app: plausible
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

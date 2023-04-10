@@ -1,0 +1,72 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  name: analytics.{{ .domain_name }}
+spec:
+  kubernetesVersion: 1.22.0
+  cloudProvider: aws
+  subnets:
+  - name: us-east-1a
+    zone: us-east-1a
+    cidr: "10.0.0.0/24"
+  networkCIDR: "10.0.0.0/16"
+  api:
+    loadBalancer:
+      type: Public
+  authorization:
+    rbac: {}
+  dnsZone: my-domain.com
+  etcdClusters:
+  - name: main
+    version: 3.5.0
+    etcdMembers:
+    - instanceGroup: master-us-east-1a
+      name: a
+  - name: events
+    version: 3.5.0
+    etcdMembers:
+    - instanceGroup: master-us-east-1a
+      name: a
+  topology:
+    dns:
+      type: Public
+    masters: public
+    nodes: public
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: analytics.{{ .domain_name }}
+  name: master-us-east-1a
+spec:
+  image: 099720109477/ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20210907
+  machineType: t3.micro
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-us-east-1a
+  role: Master
+  subnets:
+  - us-east-1a
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  labels:
+    kops.k8s.io/cluster: analytics.{{ .domain_name }}
+  name: nodes
+spec:
+  image: 099720109477/ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20210907
+  machineType: t3.micro
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  subnets:
+  - us-east-1a

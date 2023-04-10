@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: events-db
+  namespace: plausible
+spec:
+  serviceName: "events-db"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: events-db
+  template:
+    metadata:
+      labels:
+        app: events-db
+    spec:
+      initContainers:
+        - name: set-ulimits
+          image: busybox
+          command: ["sh", "-c", "ulimit -n 262144"]
+          securityContext:
+            privileged: true
+      containers:
+        - name: events-db
+          image: clickhouse/clickhouse-server:22.6-alpine
+          ports:
+            - containerPort: 8123
+          volumeMounts:
+            - name: event-data
+              mountPath: /var/lib/clickhouse
+  volumeClaimTemplates:
+    - metadata:
+        name: event-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: events-db
+  namespace: plausible
+spec:
+  clusterIP: None
+  selector:
+    app: events-db
+  ports:
+  - protocol: TCP
+    port: 8123
