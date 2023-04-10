@@ -16,17 +16,18 @@ spec:
       containers:
         - name: caddy
           image: caddy
-          command: ["caddy", "reverse-proxy", "--from", "$FROM_URL", "--to", "http://plausible:8000"]
+          command: ["caddy", "reverse-proxy", "--from", "$(FROM_URL)", "--to", "http://plausible:8000"]
           ports:
             - containerPort: 80
             - containerPort: 443
           env:
-            - name: FROM_URL
+            - name: DOMAIN_NAME
               valueFrom:
-                secretKeyRef:
+                configMapKeyRef:
                   name: plausible-config
                   key: DOMAIN_NAME
-              value: "https://${DOMAIN_NAME}:443"
+            - name: FROM_URL
+              value: "https://$(DOMAIN_NAME):443"
 
 ---
 
@@ -40,8 +41,10 @@ spec:
     app: caddy
   ports:
     - protocol: TCP
+      name: http
       port: 80
       targetPort: 80
     - protocol: TCP
+      name: https
       port: 443
       targetPort: 443

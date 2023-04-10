@@ -22,7 +22,7 @@ spec:
                 name: plausible-config
           env:
             - name: DATABASE_URL
-              value: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/plausible_db"
+              value: "postgres://postgres:postgres@db:5432/plausible_db"  # "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/plausible_db"
             - name: CLICKHOUSE_DATABASE_URL
               value: "http://events-db:8123/plausible_events_db"
             - name: DOMAIN_NAME
